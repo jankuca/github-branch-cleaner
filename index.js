@@ -35,6 +35,11 @@ program
   });
 
 async function main(options) {
+  // Validate that at least one option is provided
+  if (!options.merged && !options.closed) {
+    throw new Error('Please specify at least one option: --merged or --closed');
+  }
+
   // Validate that we're in a git repository
   if (!gitOps.isGitRepository()) {
     throw new Error('This command must be run from within a Git repository');
@@ -43,11 +48,6 @@ async function main(options) {
   // Validate GitHub token
   if (!process.env.GITHUB_TOKEN) {
     throw new Error('GITHUB_TOKEN environment variable is required. Please set it in your .env file.');
-  }
-
-  // Validate that at least one option is provided
-  if (!options.merged && !options.closed) {
-    throw new Error('Please specify at least one option: --merged or --closed');
   }
 
   console.log('🔍 Analyzing local branches and their GitHub PRs...\n');
@@ -59,8 +59,8 @@ async function main(options) {
   // Get all local branches except current branch
   const currentBranch = await gitOps.getCurrentBranch();
   const allBranches = await gitOps.getLocalBranches();
-  const branchesToCheck = allBranches.filter(branch => 
-    branch !== currentBranch && 
+  const branchesToCheck = allBranches.filter(branch =>
+    branch !== currentBranch &&
     !['main', 'master', 'develop', 'dev'].includes(branch)
   );
 
@@ -77,18 +77,18 @@ async function main(options) {
 
   // Find PRs for each branch and determine which ones to delete
   const branchesToDelete = [];
-  
+
   for (const branch of branchesToCheck) {
     try {
       const pr = await branchMatcher.findPRForBranch(github, repoInfo, branch);
-      
+
       if (!pr) {
         console.log(`⚠️  ${branch}: No PR found`);
         continue;
       }
 
       const shouldDelete = branchMatcher.shouldDeleteBranch(pr, options);
-      
+
       if (shouldDelete) {
         branchesToDelete.push({ branch, pr });
         console.log(`🗑️  ${branch}: ${pr.state} PR #${pr.number} - "${pr.title}"`);
@@ -137,7 +137,7 @@ async function main(options) {
   // Delete the branches
   console.log('\n🗑️  Deleting branches...');
   let deletedCount = 0;
-  
+
   for (const { branch } of branchesToDelete) {
     try {
       await gitOps.deleteBranch(branch);
