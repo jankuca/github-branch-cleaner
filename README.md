@@ -22,30 +22,36 @@ A command-line tool to clean up local Git branches based on their associated Git
 
 ## Configuration
 
-1. Copy the example environment file:
-   ```bash
-   cp .env.example .env
-   ```
+Run the login command to set up authentication:
 
-2. Get a GitHub Personal Access Token:
-   - Go to [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
-   - Click "Generate new token (classic)"
-   - Give it a descriptive name like "Branch Cleaner"
-   - Select scopes:
-     - For public repositories: `public_repo`
-     - For private repositories: `repo`
-   - Copy the generated token
+```bash
+node index.js --login
+```
 
-3. Add your token to the `.env` file:
-   ```
-   GITHUB_TOKEN=your_actual_token_here
-   ```
+This will:
+- Prompt you for a GitHub Personal Access Token
+- Validate the token
+- Save it securely to `~/.github-branch-cleaner-auth`
+- Set appropriate file permissions
+
+### Getting a GitHub Personal Access Token
+
+1. Go to [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
+2. Click "Generate new token (classic)"
+3. Give it a descriptive name like "Branch Cleaner"
+4. Select scopes:
+   - For public repositories: `public_repo`
+   - For private repositories: `repo`
+5. Copy the generated token and use it with the `--login` command
 
 ## Usage
 
 Run the tool from within any Git repository:
 
 ```bash
+# Set up authentication (first time only)
+node index.js --login
+
 # Show help
 node index.js --help
 
@@ -70,6 +76,7 @@ node index.js --merged --closed --dry-run
 
 ## Options
 
+- `--login`: Set up GitHub authentication (prompts for token and saves it)
 - `--merged`: Delete branches that have associated merged PRs
 - `--closed`: Delete branches that have associated closed (but not merged) PRs
 - `--dry-run`: Show what would be deleted without actually deleting anything
@@ -101,6 +108,27 @@ The tool includes several safety measures:
 7. **Deletion**: Removes the selected branches from your local repository
 
 ## Examples
+
+### First time setup
+```bash
+$ node index.js --login
+🔐 GitHub Authentication Setup
+
+You need a GitHub Personal Access Token to use this tool.
+Create one at: https://github.com/settings/tokens
+
+Required scopes:
+  - For public repositories: public_repo
+  - For private repositories: repo
+
+Enter your GitHub Personal Access Token: ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+🔍 Validating token...
+✅ Token validated successfully! Authenticated as: your-username
+✅ Token saved to: /Users/your-username/.github-branch-cleaner-auth
+
+🎉 Authentication setup complete! You can now use the tool without --login.
+```
 
 ### Clean up merged branches
 ```bash
@@ -149,9 +177,10 @@ Branches to check: 3
 
 ## Troubleshooting
 
-### "GITHUB_TOKEN environment variable is required"
-- Make sure you've created a `.env` file with your GitHub token
+### "GitHub token is required"
+- Run `node index.js --login` to set up authentication
 - Verify the token has the correct permissions (repo or public_repo scope)
+- Check that the auth file exists: `~/.github-branch-cleaner-auth`
 
 ### "This command must be run from within a Git repository"
 - Navigate to a directory that contains a Git repository

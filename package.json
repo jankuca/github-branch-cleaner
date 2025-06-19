@@ -10,12 +10,17 @@
     "start": "node index.js",
     "test": "node test.js"
   },
-  "keywords": ["git", "github", "branch", "cleanup", "cli"],
+  "keywords": [
+    "git",
+    "github",
+    "branch",
+    "cleanup",
+    "cli"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@octokit/rest": "^22.0.0",
-    "commander": "^14.0.0",
-    "dotenv": "^16.5.0"
+    "commander": "^14.0.0"
   }
 }

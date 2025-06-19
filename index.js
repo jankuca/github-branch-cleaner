@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 
 const { Command } = require('commander');
-const dotenv = require('dotenv');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
+const readline = require('readline');
 
-// Load environment variables
-dotenv.config();
+// Authentication file path
+const AUTH_FILE_PATH = path.join(os.homedir(), '.github-branch-cleaner-auth');
 
 const program = new Command();
 
@@ -25,14 +26,97 @@ program
   .option('--closed', 'Delete branches with closed PRs')
   .option('--dry-run', 'Show what would be deleted without actually deleting')
   .option('--force', 'Skip confirmation prompts')
+  .option('--login', 'Prompt for GitHub token and save it for future use')
   .action(async (options) => {
     try {
+      if (options.login) {
+        await handleLogin();
+        return;
+      }
       await main(options);
     } catch (error) {
       console.error('Error:', error.message);
       process.exit(1);
     }
   });
+
+/**
+ * Load GitHub token from auth file
+ */
+function loadGitHubToken() {
+  try {
+    if (fs.existsSync(AUTH_FILE_PATH)) {
+      const authFileContent = fs.readFileSync(AUTH_FILE_PATH, 'utf8');
+      // Simple parsing of GITHUB_TOKEN=value format
+      const lines = authFileContent.split('\n');
+      for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (trimmedLine.startsWith('GITHUB_TOKEN=')) {
+          return trimmedLine.substring('GITHUB_TOKEN='.length);
+        }
+      }
+    }
+  } catch (error) {
+    // Ignore errors reading auth file, will fall through to error below
+  }
+
+  return null;
+}
+
+/**
+ * Handle the --login option
+ */
+async function handleLogin() {
+  console.log('🔐 GitHub Authentication Setup\n');
+  console.log('You need a GitHub Personal Access Token to use this tool.');
+  console.log('Create one at: https://github.com/settings/tokens\n');
+  console.log('Required scopes:');
+  console.log('  - For public repositories: public_repo');
+  console.log('  - For private repositories: repo\n');
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  try {
+    const token = await new Promise((resolve) => {
+      rl.question('Enter your GitHub Personal Access Token: ', (answer) => {
+        resolve(answer.trim());
+      });
+    });
+
+    if (!token) {
+      throw new Error('No token provided');
+    }
+
+    // Validate the token by making a simple API call
+    console.log('\n🔍 Validating token...');
+    const github = githubApi.initialize(token);
+
+    try {
+      // Test the token by getting user info
+      const { data: user } = await github.rest.users.getAuthenticated();
+      console.log(`✅ Token validated successfully! Authenticated as: ${user.login}`);
+    } catch (error) {
+      throw new Error(`Invalid token: ${error.message}`);
+    }
+
+    // Save the token to the auth file
+    const authContent = `# GitHub Personal Access Token for github-branch-cleaner\n# This file was created by running: github-branch-cleaner --login\nGITHUB_TOKEN=${token}\n`;
+
+    try {
+      fs.writeFileSync(AUTH_FILE_PATH, authContent, { mode: 0o600 }); // Restrict file permissions
+      console.log(`✅ Token saved to: ${AUTH_FILE_PATH}`);
+      console.log('\n🎉 Authentication setup complete! You can now use the tool without --login.');
+    } catch (error) {
+      throw new Error(`Failed to save token: ${error.message}`);
+    }
+
+  } finally {
+    rl.close();
+  }
+}
 
 async function main(options) {
   // Validate that at least one option is provided
@@ -45,9 +129,10 @@ async function main(options) {
     throw new Error('This command must be run from within a Git repository');
   }
 
-  // Validate GitHub token
-  if (!process.env.GITHUB_TOKEN) {
-    throw new Error('GITHUB_TOKEN environment variable is required. Please set it in your .env file.');
+  // Load and validate GitHub token
+  const githubToken = loadGitHubToken();
+  if (!githubToken) {
+    throw new Error('GitHub token is required. Please run "github-branch-cleaner --login" to set up authentication.');
   }
 
   console.log('🔍 Analyzing local branches and their GitHub PRs...\n');
@@ -73,7 +158,7 @@ async function main(options) {
   console.log(`Branches to check: ${branchesToCheck.length}\n`);
 
   // Initialize GitHub API
-  const github = githubApi.initialize(process.env.GITHUB_TOKEN);
+  const github = githubApi.initialize(githubToken);
 
   // Find PRs for each branch and determine which ones to delete
   const branchesToDelete = [];
@@ -117,7 +202,6 @@ async function main(options) {
 
   // Ask for confirmation unless --force is used
   if (!options.force) {
-    const readline = require('readline');
     const rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout

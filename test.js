@@ -52,7 +52,7 @@ async function runTests() {
   console.log('\nTest 5: Branch safety checks');
   const testBranches = ['main', 'master', 'feature/test', 'develop'];
   const currentBranch = 'main';
-  
+
   testBranches.forEach(branch => {
     const isSafe = branchMatcher.isBranchSafeToDelete(branch, currentBranch);
     console.log(`   ${branch}: ${isSafe ? '✅ Safe to delete' : '❌ Protected'}`);
@@ -65,37 +65,73 @@ async function runTests() {
     { state: 'closed', merged: false },
     { state: 'closed', merged: true }
   ];
-  
+
   const testOptions = { merged: true, closed: true };
-  
+
   testPRs.forEach((pr, index) => {
     const shouldDelete = branchMatcher.shouldDeleteBranch(pr, testOptions);
     const status = branchMatcher.getPRStatusSummary(pr);
     console.log(`   PR ${index + 1} (${status}): ${shouldDelete ? '🗑️  Delete' : '✅ Keep'}`);
   });
 
-  // Test 7: GitHub API initialization (if token exists)
-  console.log('\nTest 7: GitHub API initialization');
-  if (process.env.GITHUB_TOKEN) {
-    try {
-      const github = githubApi.initialize(process.env.GITHUB_TOKEN);
-      console.log('✅ GitHub API client initialized successfully');
-    } catch (error) {
-      console.log(`❌ GitHub API initialization failed: ${error.message}`);
+  // Test 7: Token loading functionality
+  console.log('\nTest 7: Token loading functionality');
+  try {
+    // Test the loadGitHubToken function (we need to import it or recreate the logic)
+    const fs = require('fs');
+    const path = require('path');
+    const os = require('os');
+
+    const AUTH_FILE_PATH = path.join(os.homedir(), '.github-branch-cleaner-auth');
+
+    function loadGitHubToken() {
+      try {
+        if (fs.existsSync(AUTH_FILE_PATH)) {
+          const authFileContent = fs.readFileSync(AUTH_FILE_PATH, 'utf8');
+          // Simple parsing of GITHUB_TOKEN=value format
+          const lines = authFileContent.split('\n');
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (trimmedLine.startsWith('GITHUB_TOKEN=')) {
+              return trimmedLine.substring('GITHUB_TOKEN='.length);
+            }
+          }
+        }
+      } catch (error) {
+        // Ignore errors reading auth file
+      }
+
+      return null;
     }
-  } else {
-    console.log('⚠️  Skipping GitHub API test (no GITHUB_TOKEN in environment)');
+
+    const token = loadGitHubToken();
+    if (token) {
+      console.log('✅ GitHub token found and loaded successfully');
+      console.log('   Source: Auth file');
+
+      // Test GitHub API initialization
+      try {
+        const github = githubApi.initialize(token);
+        console.log('✅ GitHub API client initialized successfully');
+      } catch (error) {
+        console.log(`❌ GitHub API initialization failed: ${error.message}`);
+      }
+    } else {
+      console.log('⚠️  No GitHub token found');
+      console.log('   Run "node index.js --login" to set up authentication');
+    }
+  } catch (error) {
+    console.log(`❌ Token loading test failed: ${error.message}`);
   }
 
   console.log('\n🎉 Test suite completed!');
   console.log('\n📝 Notes:');
-  console.log('   - To test GitHub API functionality, set GITHUB_TOKEN in .env file');
+  console.log('   - To test GitHub API functionality, run "node index.js --login" to set up authentication');
   console.log('   - To test with a real repository, add a GitHub remote origin');
   console.log('   - The tool is designed to be safe and will ask for confirmation before deleting branches');
 }
 
-// Load environment variables
-require('dotenv').config();
+// No environment variables to load - using auth file only
 
 // Run tests
 runTests().catch(error => {
