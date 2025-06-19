@@ -160,30 +160,25 @@ async function main(options) {
   // Initialize GitHub API
   const github = githubApi.initialize(githubToken);
 
-  // Find PRs for each branch and determine which ones to delete
-  const branchesToDelete = [];
+  // Use optimized batch fetching to find branches to delete
+  const { branchesToDelete, branchStatus } = await branchMatcher.findBranchesToDelete(
+    github,
+    repoInfo,
+    branchesToCheck,
+    options,
+    currentBranch
+  );
 
-  for (const branch of branchesToCheck) {
-    try {
-      const pr = await branchMatcher.findPRForBranch(github, repoInfo, branch);
-
-      if (!pr) {
-        console.log(`⚠️  ${branch}: No PR found`);
-        continue;
-      }
-
-      const shouldDelete = branchMatcher.shouldDeleteBranch(pr, options);
-
-      if (shouldDelete) {
-        branchesToDelete.push({ branch, pr });
-        const status = pr.merged ? 'merged' : pr.state;
-        console.log(`🗑️  ${branch}: ${status} PR #${pr.number} - "${pr.title}"`);
-      } else {
-        const status = pr.merged ? 'merged' : pr.state;
-        console.log(`✅ ${branch}: ${status} PR #${pr.number} - keeping`);
-      }
-    } catch (error) {
-      console.log(`❌ ${branch}: Error checking PR - ${error.message}`);
+  // Display the status of each branch
+  for (const { branch, status, shouldDelete } of branchStatus) {
+    if (shouldDelete) {
+      console.log(`🗑️  ${branch}: ${status}`);
+    } else if (status === 'No PR found') {
+      console.log(`⚠️  ${branch}: ${status}`);
+    } else if (status.startsWith('Error:')) {
+      console.log(`❌ ${branch}: ${status}`);
+    } else {
+      console.log(`✅ ${branch}: ${status} - keeping`);
     }
   }
 
