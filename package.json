@@ -1,6 +1,6 @@
 {
   "name": "github-branch-cleaner",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A CLI tool to clean up local Git branches based on GitHub PR status",
   "main": "index.js",
   "bin": {
