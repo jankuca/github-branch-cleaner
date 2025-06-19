@@ -176,9 +176,11 @@ async function main(options) {
 
       if (shouldDelete) {
         branchesToDelete.push({ branch, pr });
-        console.log(`🗑️  ${branch}: ${pr.state} PR #${pr.number} - "${pr.title}"`);
+        const status = pr.merged ? 'merged' : pr.state;
+        console.log(`🗑️  ${branch}: ${status} PR #${pr.number} - "${pr.title}"`);
       } else {
-        console.log(`✅ ${branch}: ${pr.state} PR #${pr.number} - keeping`);
+        const status = pr.merged ? 'merged' : pr.state;
+        console.log(`✅ ${branch}: ${status} PR #${pr.number} - keeping`);
       }
     } catch (error) {
       console.log(`❌ ${branch}: Error checking PR - ${error.message}`);
@@ -192,7 +194,8 @@ async function main(options) {
 
   console.log(`\n📋 Found ${branchesToDelete.length} branch(es) to delete:`);
   branchesToDelete.forEach(({ branch, pr }) => {
-    console.log(`  - ${branch} (${pr.state} PR #${pr.number})`);
+    const status = pr.merged ? 'merged' : pr.state;
+    console.log(`  - ${branch} (${status} PR #${pr.number})`);
   });
 
   if (options.dryRun) {
