@@ -1,5 +1,7 @@
 # GitHub Branch Cleaner
 
+[![npm version](https://badge.fury.io/js/github-branch-cleaner.svg)](https://www.npmjs.com/package/github-branch-cleaner)
+
 A command-line tool to clean up local Git branches based on their associated GitHub Pull Request status.
 
 ## Features
@@ -13,19 +15,20 @@ A command-line tool to clean up local Git branches based on their associated Git
 
 ## Installation
 
-1. Clone this repository or download the files
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Set up your GitHub token (see Configuration section)
+Install globally via npm:
+
+```bash
+npm install -g github-branch-cleaner
+```
+
+After installation, the `github-branch-cleaner` command will be available globally.
 
 ## Configuration
 
 Run the login command to set up authentication:
 
 ```bash
-node index.js --login
+github-branch-cleaner --login
 ```
 
 This will:
@@ -50,28 +53,28 @@ Run the tool from within any Git repository:
 
 ```bash
 # Set up authentication (first time only)
-node index.js --login
+github-branch-cleaner --login
 
 # Show help
-node index.js --help
+github-branch-cleaner --help
 
 # Delete branches with merged PRs (with confirmation)
-node index.js --merged
+github-branch-cleaner --merged
 
 # Delete branches with closed PRs (with confirmation)
-node index.js --closed
+github-branch-cleaner --closed
 
 # Delete both merged and closed PR branches
-node index.js --merged --closed
+github-branch-cleaner --merged --closed
 
 # Preview what would be deleted (dry run)
-node index.js --merged --dry-run
+github-branch-cleaner --merged --dry-run
 
 # Delete without confirmation prompts
-node index.js --merged --force
+github-branch-cleaner --merged --force
 
 # Combine options
-node index.js --merged --closed --dry-run
+github-branch-cleaner --merged --closed --dry-run
 ```
 
 ## Options
@@ -111,7 +114,7 @@ The tool includes several safety measures:
 
 ### First time setup
 ```bash
-$ node index.js --login
+$ github-branch-cleaner --login
 🔐 GitHub Authentication Setup
 
 You need a GitHub Personal Access Token to use this tool.
@@ -132,7 +135,7 @@ Enter your GitHub Personal Access Token: ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
 ### Clean up merged branches
 ```bash
-$ node index.js --merged
+$ github-branch-cleaner --merged
 🔍 Analyzing local branches and their GitHub PRs...
 
 Repository: username/my-project
@@ -158,7 +161,7 @@ Branches to check: 5
 
 ### Dry run to preview
 ```bash
-$ node index.js --merged --closed --dry-run
+$ github-branch-cleaner --merged --closed --dry-run
 🔍 Analyzing local branches and their GitHub PRs...
 
 Repository: username/my-project
@@ -178,7 +181,7 @@ Branches to check: 3
 ## Troubleshooting
 
 ### "GitHub token is required"
-- Run `node index.js --login` to set up authentication
+- Run `github-branch-cleaner --login` to set up authentication
 - Verify the token has the correct permissions (repo or public_repo scope)
 - Check that the auth file exists: `~/.github-branch-cleaner-auth`
 
@@ -194,6 +197,32 @@ Branches to check: 3
 - GitHub API has rate limits (5000 requests/hour for authenticated users)
 - The tool is designed to be efficient, but very large repositories might hit limits
 - Wait an hour or use a different token if you hit rate limits
+
+## Local Development
+
+If you want to contribute or run the tool locally:
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/jankuca/github-branch-cleaner.git
+   cd github-branch-cleaner
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Run locally:
+   ```bash
+   node index.js --help
+   node index.js --login
+   ```
+
+4. Run tests:
+   ```bash
+   npm test
+   ```
 
 ## Contributing
 
