@@ -198,6 +198,11 @@ Branches to check: 3
 - The tool is designed to be efficient, but very large repositories might hit limits
 - Wait an hour or use a different token if you hit rate limits
 
+### Deprecation warnings
+- You may see deprecation warnings about `octokit.rest.search.issuesAndPullRequests()` until September 4, 2025
+- This is expected and the tool uses the new advanced search API to ensure future compatibility
+- The warnings will disappear after GitHub completes the transition to advanced search
+
 ## Local Development
 
 If you want to contribute or run the tool locally:
